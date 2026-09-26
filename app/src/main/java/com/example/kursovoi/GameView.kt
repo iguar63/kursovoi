@@ -8,16 +8,19 @@ import android.view.SurfaceView
 class GameView(context: Context, attrs: AttributeSet?) :
     SurfaceView(context, attrs),
     Runnable {
-    private val chek = listOf(Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.CYAN, Color.GRAY);private var chekmas = mutableListOf<Int>(); private val plita = mutableListOf<Plita>();   ; private val movePlita = mutableListOf<Int>() ; private var delay = 5 ; private var counter = 0 // не сбрасываемые переменные
-    private val textPaint = Paint().apply {
-        color = Color.WHITE
-        textSize = 50f
-        isAntiAlias = true
-        typeface = Typeface.DEFAULT_BOLD
-    } ; private val borderPaint = Paint().apply {
-        color = Color.LTGRAY
+    private var schet = 0
+    private val chek = listOf(Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.CYAN, Color.GRAY)
+    private var chekmas = mutableListOf<Int>()
+    private val plita = mutableListOf<Plita>()
+    private val movePlita = mutableListOf<Int>()
+    private var delay = 5 ; private var counter = 0 // не сбрасываемые переменные
+    private val adgePaint = Paint().apply {
+        color = Color.BLACK
         style = Paint.Style.FILL_AND_STROKE
-        strokeWidth = 0f
+        strokeWidth = 15f};private val plitBorderPaint = Paint().apply {
+        color = Color.MAGENTA
+        style = Paint.Style.STROKE
+        strokeWidth = 15f
     } // краски
     private var pointerId = -1 ; private var isTouching = false ; private var touchX = 0f ;private var touchY = 0f ; private var thread: Thread? = null ; private var isRunning = false // не менять
     init {
@@ -59,13 +62,22 @@ class GameView(context: Context, attrs: AttributeSet?) :
     }
     private fun update() {
         swap()
-        for (i in 0..5) for (plit in plita) if (plit.cvet.color == chek[i]) chekmas.add(plita.indexOf(plit))
-        for (i in 0 until chekmas.size){
-            for (j in 0 until chekmas.size){
-                 //plita.removeAt(j)
+        delete()
+        /*for (plit in plita){
+            if (plit.cvet.color == Color.BLACK && plita.indexOf(plit) !in 0..5){
+                plit.cvet.color = plita[plita.indexOf(plit)-6].cvet.color
             }
-        }
-        //plita.removeAll(chekmas)
+        }*/
+    }
+    private fun delete(){
+        var cheked = mutableListOf<Int>()
+        var cheking = mutableListOf<Int>()
+        for (plit in plita) if(plit.cvet.color == chek[schet]) cheking.add(plita.indexOf(plit))
+        for (k in cheking)for (j in cheking) for (i in cheking) if (i - j == 6 && j - k == 6){ cheked.add(i);cheked.add(j);cheked.add(k)}
+        for (k in cheking)for (j in cheking) for (i in cheking) if ((i+1)%6 != 0 && j%6 != 0 && (j+1)%6 != 0 && k%6 != 0) if (i - j == 1 && j - k == 1){ cheked.add(i);cheked.add(j);cheked.add(k)}
+        for(i in cheked)plita[i].cvet.color = Color.BLACK
+        schet++
+        if (schet == 6) schet = 0
     }
     private fun draw() {
         val holder = holder ?: return
@@ -75,9 +87,17 @@ class GameView(context: Context, attrs: AttributeSet?) :
             canvas.drawRect(plit.y, plit.x, plit.y + 200f, plit.x + 200f, plit.cvet)
         }
         for (i in 0..6) {
-            canvas.drawRect(95f+(210f*i),795f,95f+12f+(210f*i),795f+(210f*6), borderPaint)
-            canvas.drawRect(95f,795f+(210f*i),95f+(212f*6),795f+12f+(210f*i), borderPaint)
+            canvas.drawRect(95f+(210f*i),795f,95f+12f+(210f*i),795f+(210f*6), adgePaint)
+            canvas.drawRect(95f,795f+(210f*i),95f+(212f*6),795f+12f+(210f*i), adgePaint)
         }
+        if (movePlita.isNotEmpty()){
+            canvas.drawRect(plita[movePlita[0]].y - 210f ,plita[movePlita[0]].x,plita[movePlita[0]].y +410f,plita[movePlita[0]].x + 210f, plitBorderPaint)
+            canvas.drawRect(plita[movePlita[0]].y ,plita[movePlita[0]].x -210f ,plita[movePlita[0]].y + 210f,plita[movePlita[0]].x + 410f, plitBorderPaint)
+        }
+        canvas.drawRect(0f ,0f,10000f,785f, adgePaint)
+        canvas.drawRect(0f ,0f,85f,10000f, adgePaint)
+        canvas.drawRect(  plita.last().y+225f ,0f,10000f,10000f, adgePaint)
+        canvas.drawRect(  0f ,plita.last().x+225f,10000f,10000f, adgePaint)
         holder.unlockCanvasAndPost(canvas)
     }
     private fun firstspawn() {
@@ -93,10 +113,21 @@ class GameView(context: Context, attrs: AttributeSet?) :
         }
     }
     private fun swap(){
+        if (counter == 0 )choice()
+        if (counter == 1) {
+            if (touchX > plita[movePlita[0]].y - 210f && touchX < plita[movePlita[0]].y + 410f && touchY > plita[movePlita[0]].x && touchY < plita[movePlita[0]].x + 200f) choice()
+            if (touchX > plita[movePlita[0]].y && touchX < plita[movePlita[0]].y + 200f && touchY > plita[movePlita[0]].x - 210f && touchY < plita[movePlita[0]].x + 410f) choice()
+        }
+        if (counter == 2){
+            plita[movePlita[0]].cvet.color = plita[movePlita[1]].cvet.color.also { plita[movePlita[1]].cvet.color = plita[movePlita[0]].cvet.color }
+            movePlita.clear()
+            counter=0
+        }
+    }
+    private fun choice(){
         for (plit in plita) {
             if (isTouching && touchY > plit.x && touchY < plit.x + 200f && touchX > plit.y && touchX < plit.y + 200f) {
                 if (delay == 5) {
-                    plita[plita.indexOf(plit)].cvet.strokeWidth = 50f
                     movePlita.add(plita.indexOf(plit))
                     delay = 0
                     counter++
@@ -104,12 +135,6 @@ class GameView(context: Context, attrs: AttributeSet?) :
                 }
                 delay++
             }
-        }
-        if (counter == 2){
-            plita[movePlita[0]].cvet.color = plita[movePlita[1]].cvet.color.also { plita[movePlita[1]].cvet.color = plita[movePlita[0]].cvet.color }
-            plita[movePlita[0]].cvet.strokeWidth = 0f;plita[movePlita[1]].cvet.strokeWidth = 0f
-            movePlita.clear()
-            counter=0
         }
     }
     override fun onTouchEvent(event: MotionEvent): Boolean {
