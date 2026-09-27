@@ -8,20 +8,70 @@ import android.view.SurfaceView
 class GameView(context: Context, attrs: AttributeSet?) :
     SurfaceView(context, attrs),
     Runnable {
+    private var light = false
+    private var medium = true
+    private var hard = false
+    private var bestScoreHi = 0
+    private var bestScore = 0
+    private var bestScoreLi = 0
+    private var score = 0
+    private var terns = 10
+    private var gameMenu = true
+    private var gameOver = false
+    private var obvod = mutableListOf<Int>()
     private var schet = 0
+    private var schet1 = 0
+    private var del = 0
+    private var del2 = 0
+    private var del3 = 0
+    private val liChek = listOf(Color.GREEN, Color.RED, Color.YELLOW)
     private val chek = listOf(Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.CYAN, Color.GRAY)
-    private var chekmas = mutableListOf<Int>()
+    private val haChek = listOf(Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.CYAN, Color.GRAY, Color.LTGRAY, Color.WHITE, Color.DKGRAY)
+    private val chekbord = listOf<Int>(5,11,17,23,29,35,6,12,18,24,30)
+    private val chekbb = listOf<Int>(4,10,16,22,28,34)
     private val plita = mutableListOf<Plita>()
     private val movePlita = mutableListOf<Int>()
-    private var delay = 5 ; private var counter = 0 // не сбрасываемые переменные
+    private var delay = 3
+    private var counter = 0
+    private var strokePaint = Paint().apply {
+        color = Color.WHITE
+        style = Paint.Style.STROKE
+        strokeWidth = 15f}
+    private var blockPaint = Paint().apply {
+        style = Paint.Style.FILL_AND_STROKE
+        strokeWidth = 15f}
     private val adgePaint = Paint().apply {
         color = Color.BLACK
         style = Paint.Style.FILL_AND_STROKE
-        strokeWidth = 15f};private val plitBorderPaint = Paint().apply {
+        strokeWidth = 15f}
+    private val plitBorderPaint = Paint().apply {
         color = Color.MAGENTA
         style = Paint.Style.STROKE
-        strokeWidth = 15f
-    } // краски
+        strokeWidth = 15f}
+    private val BorderPaint = Paint().apply {
+        color = Color.WHITE
+        style = Paint.Style.STROKE
+        strokeWidth = 15f}
+    private val menuTextPaint = Paint().apply {
+        color = Color.BLACK
+        textSize = 60f
+        isAntiAlias = true
+        typeface = Typeface.DEFAULT_BOLD }
+    private val textPaint = Paint().apply {
+        color = Color.WHITE
+        textSize = 75f
+        isAntiAlias = true
+        typeface = Typeface.DEFAULT_BOLD }
+    private val scorePaint = Paint().apply {
+        color = Color.WHITE
+        textSize = 40f
+        isAntiAlias = true
+        typeface = Typeface.DEFAULT_BOLD }
+    private val gameOverPaint = Paint().apply {
+        color = Color.MAGENTA
+        textSize = 200f
+        isAntiAlias = true
+        typeface = Typeface.DEFAULT_BOLD }
     private var pointerId = -1 ; private var isTouching = false ; private var touchX = 0f ;private var touchY = 0f ; private var thread: Thread? = null ; private var isRunning = false // не менять
     init {
         holder.addCallback(object : SurfaceHolder.Callback {
@@ -37,7 +87,6 @@ class GameView(context: Context, attrs: AttributeSet?) :
         })
     }
     private fun startGame() {
-        firstspawn()
         if (thread == null) {
             isRunning = true
             thread = Thread(this)
@@ -51,7 +100,8 @@ class GameView(context: Context, attrs: AttributeSet?) :
     }
     override fun run() {
         while (isRunning) {
-            update()
+            if (!gameMenu)update()
+            if (gameMenu)menu()
             draw()
             try {
                 Thread.sleep(16)
@@ -60,74 +110,248 @@ class GameView(context: Context, attrs: AttributeSet?) :
             }
         }
     }
+    private fun menu(){
+        if (isTouching && touchX > 30f  && touchX < width/3f-30f  && touchY > 1200f && touchY < 1400f ) {
+            light = true; medium = false; hard = false ; isTouching = false
+        }
+        if (isTouching && touchX > width/3f+30f  && touchX < width/3f*2-30f  && touchY > 1200f && touchY < 1400f ) {
+            light = false; medium = true; hard = false ; isTouching = false
+        }
+        if (isTouching && touchX > width/3f*2+30f  && touchX < width/3f*3-30f  && touchY > 1200f && touchY < 1400f ) {
+            light = false; medium = false; hard = true ; isTouching = false
+        }
+        if (isTouching && touchX > width/3f+30f  && touchX < width/3f*2-30f  && touchY > 1500f && touchY < 1700f){
+            movePlita.clear()
+            plita.clear()
+            gameOver = false
+            firstspawn()
+            isTouching=false
+            gameMenu = false
+            if (light) terns=20
+            if (medium) terns=15
+            if (hard) terns=10
+            counter = 0
+            score=0
+        }
+    }
     private fun update() {
-        swap()
+        if (gameOver && isTouching && touchX > width/3f  && touchX < width/3f*2-60f  && touchY > plita.last().x + 300f && touchY < plita.last().x + 500f){
+            gameMenu = true
+            isTouching=false
+        }
+        if (terns == 0 ) gameOver = true
+        if (!gameOver)swap()
         delete()
-        /*for (plit in plita){
-            if (plit.cvet.color == Color.BLACK && plita.indexOf(plit) !in 0..5){
-                plit.cvet.color = plita[plita.indexOf(plit)-6].cvet.color
+        respawn()
+        /*for (plit in plita) {
+            if (isTouching && touchX > width / 2f && touchX < width / 10 * 9f && touchY > 1800f && touchY < 2000f) {
+                val cheked = mutableListOf<Int>()
+                val cheking = mutableListOf<Int>()
+                for (plit in plita) if (hard) if (plit.cvet.color == haChek[schet1]) cheking.add(
+                    plita.indexOf(plit)
+                )
+                for (plit in plita) if (medium) if (plit.cvet.color == chek[schet1]) cheking.add(
+                    plita.indexOf(plit)
+                )
+                for (plit in plita) if (light) if (plit.cvet.color == liChek[schet1]) cheking.add(
+                    plita.indexOf(plit)
+                )
+                for (k in cheking) for (j in cheking) for (i in cheking) if (i - j == 6 && j - k == 12 || i - j == 12 && j - k == 6) {
+                    cheked.add(i); cheked.add(j); cheked.add(k)
+                }
+                for (k in cheking) for (j in cheking) for (i in cheking) if (i !in chekbord && j !in chekbord || j in chekbb && i in chekbord) if (i - j == 1 && j - k == 2 || i - j == 2 && j - k == 1) {
+                    cheked.add(i); cheked.add(j); cheked.add(k)
+                }
+                obvod = cheked
+                schet1++
+                if (hard) if (schet1 == 9) schet1 = 0
+                if (medium) if (schet1 == 6) schet1 = 0
+                if (light) if (schet1 == 3) schet1 = 0
             }
         }*/
     }
-    private fun delete(){
-        var cheked = mutableListOf<Int>()
-        var cheking = mutableListOf<Int>()
-        for (plit in plita) if(plit.cvet.color == chek[schet]) cheking.add(plita.indexOf(plit))
-        for (k in cheking)for (j in cheking) for (i in cheking) if (i - j == 6 && j - k == 6){ cheked.add(i);cheked.add(j);cheked.add(k)}
-        for (k in cheking)for (j in cheking) for (i in cheking) if ((i+1)%6 != 0 && j%6 != 0 && (j+1)%6 != 0 && k%6 != 0) if (i - j == 1 && j - k == 1){ cheked.add(i);cheked.add(j);cheked.add(k)}
-        for(i in cheked)plita[i].cvet.color = Color.BLACK
-        schet++
-        if (schet == 6) schet = 0
-    }
+
     private fun draw() {
         val holder = holder ?: return
         val canvas = holder.lockCanvas() ?: return
         canvas.drawColor(Color.BLACK)
-        for (plit in plita) {
-            canvas.drawRect(plit.y, plit.x, plit.y + 200f, plit.x + 200f, plit.cvet)
+        if (gameMenu){
+            blockPaint.color = Color.GREEN
+            canvas.drawRect(30f,1200f,width/3f-30f,1400f,blockPaint)
+            blockPaint.color = Color.YELLOW
+            canvas.drawRect(width/3f+30f,1200f,width/3f*2-30f,1400f,blockPaint)
+            blockPaint.color = Color.RED
+            canvas.drawRect(width/3f*2+30f,1200f,width/3f*3-30f,1400f,blockPaint)
+            if (light)canvas.drawRect(30f,1200f,width/3f-30f,1400f,strokePaint)
+            if (medium)canvas.drawRect(width/3f+30f,1200f,width/3f*2-30f,1400f,strokePaint)
+            if (hard)canvas.drawRect(width/3f*2+30f,1200f,width/3f*3-30f,1400f,strokePaint)
+            canvas.drawRect(width/3f+30f,1500f,width/3f*2-30f,1700f,textPaint)
+            canvas.drawText("СТАРТ", width/3f+90f, 1630f, menuTextPaint)
+            canvas.drawText("Легкая", width/14f, 1300f, menuTextPaint)
+            canvas.drawText("Средняя", width/4f+135f, 1300f, menuTextPaint)
+            canvas.drawText("Тяжелая", width/3f+425f, 1300f, menuTextPaint)
+            canvas.drawText("3 В РЯД", width / 2f - 375f, height / 2f - 800f, gameOverPaint)
+            canvas.drawText("Лучший счет (легко): $bestScoreLi", 100f, 800f, scorePaint)
+            canvas.drawText("Лучший счет (средне): $bestScore", 100f, 900f, scorePaint)
+            canvas.drawText("Лучший счет (тяжело): $bestScoreHi", 100f, 1000f, scorePaint)
         }
-        for (i in 0..6) {
-            canvas.drawRect(95f+(210f*i),795f,95f+12f+(210f*i),795f+(210f*6), adgePaint)
-            canvas.drawRect(95f,795f+(210f*i),95f+(212f*6),795f+12f+(210f*i), adgePaint)
+        if (!gameMenu) {
+            for (plit in plita) {
+                canvas.drawRect(plit.y, plit.x, plit.y + 160f, plit.x + 160f, plit.cvet)
+            }
+            for (i in 0..6) {
+                canvas.drawRect(45f + (160f * i), 795f, 45f + 12f + (160f * i), 795f + (160f * 6), adgePaint)
+               canvas.drawRect(45f, 795f + (160f * i), 45f + (162f * 6), 795f + 12f + (160f * i), adgePaint)
+            }
+            /*if (obvod.isNotEmpty()){
+                for (i in obvod)canvas.drawRect(plita[obvod[i]].y, plita[obvod[i]].x, plita[obvod[i]].y + 160f, plita[obvod[i]].x + 160f, BorderPaint)
+                del++
+                if (del3 == 120){ del3=0;obvod.clear()}
+            }*/
+            if (movePlita.isNotEmpty()) {
+                canvas.drawRect(plita[movePlita[0]].y - 160f, plita[movePlita[0]].x, plita[movePlita[0]].y + 320f, plita[movePlita[0]].x + 160f, plitBorderPaint)
+                canvas.drawRect(plita[movePlita[0]].y, plita[movePlita[0]].x - 160f, plita[movePlita[0]].y + 160f, plita[movePlita[0]].x + 320f, plitBorderPaint)
+            }
+            canvas.drawRect(0f, 0f, 10000f, 785f, adgePaint)
+            canvas.drawRect(0f, 0f, 35f, 10000f, adgePaint)
+            canvas.drawRect(plita.last().y + 175f, 0f, width + 1f, height + 1f, adgePaint)
+            canvas.drawRect(0f, plita.last().x + 175f, width + 1f, height + 1f, adgePaint)
+            if (light)canvas.drawText("Сложность: Легко", 100f, 450f, textPaint)
+            if (medium)canvas.drawText("Сложность: Средне", 100f, 450f, textPaint)
+            if (hard)canvas.drawText("Сложность: Тяжело", 100f, 450f, textPaint)
+            canvas.drawText("Ходы: $terns", 100f, 600f, textPaint)
+            canvas.drawText("Счет: $score", 100f, 725f, textPaint)
+            canvas.drawRect(width/2f,plita.last().x + 300f, width/10*9f, plita.last().x + 500f,textPaint)
+            canvas.drawText("Помощь", width/2f + 90f, plita.last().x + 420f, menuTextPaint)
+            if (gameOver) {
+                canvas.drawText("GAME!", width / 2f - 265f, height / 2f, gameOverPaint)
+                if (light && bestScoreLi< score)bestScoreLi = score
+                if (medium && bestScore < score)bestScore = score
+                if (hard && bestScoreHi <score)bestScoreHi = score
+                canvas.drawRect(width/3f,1800f,width/3f*2-60f,2000f,textPaint)
+                canvas.drawText("МЕНЮ", width/3f+60f, 1930f, menuTextPaint)
+            }
         }
-        if (movePlita.isNotEmpty()){
-            canvas.drawRect(plita[movePlita[0]].y - 210f ,plita[movePlita[0]].x,plita[movePlita[0]].y +410f,plita[movePlita[0]].x + 210f, plitBorderPaint)
-            canvas.drawRect(plita[movePlita[0]].y ,plita[movePlita[0]].x -210f ,plita[movePlita[0]].y + 210f,plita[movePlita[0]].x + 410f, plitBorderPaint)
-        }
-        canvas.drawRect(0f ,0f,10000f,785f, adgePaint)
-        canvas.drawRect(0f ,0f,85f,10000f, adgePaint)
-        canvas.drawRect(  plita.last().y+225f ,0f,10000f,10000f, adgePaint)
-        canvas.drawRect(  0f ,plita.last().x+225f,10000f,10000f, adgePaint)
         holder.unlockCanvasAndPost(canvas)
     }
-    private fun firstspawn() {
-        var left = 100f
-        var top = 800f
-        for (i in 0 until 6){
-            for (j in 0 until 6){
-                plita.add(Plita(top, left))
-                left+=210f
+    private fun respawn(){
+        if (del == 5) {
+            for (plit in plita) {
+                if (plit.cvet.color == Color.BLACK && plita.indexOf(plit) !in 0..5) {
+                    plit.cvet.color = plita[plita.indexOf(plit) - 6].cvet.color.also {
+                        plita[plita.indexOf(plit) - 6].cvet.color = plit.cvet.color
+                    }
+                }
             }
-            top+=210f
-            left-=210f*6
+            del = 0
+        }
+        del++
+        del2++
+        if (del2 == 10){
+            for (plit in plita){
+                del2 = 0
+                if (plit.cvet.color == Color.BLACK && plita.indexOf(plit) in 0..5) {
+                    if (hard) {
+                        plit.cvet.color = haChek.random()
+                    }
+                    if (medium) {
+                        plit.cvet.color = chek.random()
+                    }
+                    if (light){
+                        plit.cvet.color = liChek.random()
+                    }
+                }
+            }
+        }
+    }
+    private fun delete(){
+        for (plit in plita) {
+            val cheked = mutableListOf<Int>()
+            val cheking = mutableListOf<Int>()
+            for (plit in plita) if (hard) if (plit.cvet.color == haChek[schet]) cheking.add(
+                plita.indexOf(
+                    plit
+                )
+            )
+            for (plit in plita) if (medium) if (plit.cvet.color == chek[schet]) cheking.add(
+                plita.indexOf(
+                    plit
+                )
+            )
+            for (plit in plita) if (light) if (plit.cvet.color == liChek[schet]) cheking.add(
+                plita.indexOf(
+                    plit
+                )
+            )
+            for (k in cheking) for (j in cheking) for (i in cheking) if (i - j == 6 && j - k == 6) {
+                cheked.add(i); cheked.add(j); cheked.add(k); score += cheked.size * 50
+            }
+            for (k in cheking) for (j in cheking) for (i in cheking) if (i !in chekbord && j !in chekbord || j in chekbb && i in chekbord) if (i - j == 1 && j - k == 1) {
+                cheked.add(i); cheked.add(j); cheked.add(k); score += cheked.size * 50
+            }
+            for (i in cheked) plita[i].cvet.color = Color.WHITE
+            for (i in cheked) plita[i].cvet.color = Color.BLACK
+            schet++
+            if (hard) if (schet == 9) schet = 0
+            if (medium) if (schet == 6) schet = 0
+            if (light) if (schet == 3) schet = 0
+        }
+    }
+    private fun firstspawn() {
+        if (light) {
+            var left = 50f
+            var top = 800f
+            for (i in 0 until 6) {
+                for (j in 0 until 6) {
+                    plita.add(Plita(top, left,Paint().apply{color = listOf(Color.GREEN, Color.RED, Color.YELLOW).random();style = Paint.Style.FILL_AND_STROKE }))
+                    left += 160f
+                }
+                top += 160f
+                left -= 160f * 6
+            }
+        }
+        if (medium){
+            var left = 50f
+            var top = 800f
+            for (i in 0 until 6) {
+                for (j in 0 until 6) {
+                    plita.add(Plita(top, left,Paint().apply{ color = listOf(Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.CYAN, Color.GRAY).random();style = Paint.Style.FILL_AND_STROKE }))
+                    left += 160f
+                }
+                top += 160f
+                left -= 160f * 6
+            }
+        }
+        if (hard){
+            var left = 50f
+            var top = 800f
+            for (i in 0 until 6) {
+                for (j in 0 until 6) {
+                    plita.add(Plita(top, left,Paint().apply{color = listOf(Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.CYAN, Color.GRAY, Color.LTGRAY, Color.DKGRAY, Color.WHITE).random();style = Paint.Style.FILL_AND_STROKE }))
+                    left += 160f
+                }
+                top += 160f
+                left -= 160f * 6
+            }
         }
     }
     private fun swap(){
         if (counter == 0 )choice()
         if (counter == 1) {
-            if (touchX > plita[movePlita[0]].y - 210f && touchX < plita[movePlita[0]].y + 410f && touchY > plita[movePlita[0]].x && touchY < plita[movePlita[0]].x + 200f) choice()
-            if (touchX > plita[movePlita[0]].y && touchX < plita[movePlita[0]].y + 200f && touchY > plita[movePlita[0]].x - 210f && touchY < plita[movePlita[0]].x + 410f) choice()
+            if (touchX > plita[movePlita[0]].y - 160f && touchX < plita[movePlita[0]].y + 210f*1.5 && touchY > plita[movePlita[0]].x && touchY < plita[movePlita[0]].x + 150f) choice()
+            if (touchX > plita[movePlita[0]].y && touchX < plita[movePlita[0]].y + 160f && touchY > plita[movePlita[0]].x - 160f && touchY < plita[movePlita[0]].x + 210f*1.5) choice()
         }
         if (counter == 2){
             plita[movePlita[0]].cvet.color = plita[movePlita[1]].cvet.color.also { plita[movePlita[1]].cvet.color = plita[movePlita[0]].cvet.color }
+            if (movePlita[0]!=movePlita[1])terns --
             movePlita.clear()
             counter=0
         }
     }
     private fun choice(){
         for (plit in plita) {
-            if (isTouching && touchY > plit.x && touchY < plit.x + 200f && touchX > plit.y && touchX < plit.y + 200f) {
-                if (delay == 5) {
+            if (isTouching && touchY > plit.x && touchY < plit.x + 160f && touchX > plit.y && touchX < plit.y + 160f) {
+                if (delay == 3) {
                     movePlita.add(plita.indexOf(plit))
                     delay = 0
                     counter++
