@@ -23,7 +23,8 @@ class GameView(context: Context, attrs: AttributeSet?) :
     private var schet1 = 0
     private var del = 0
     private var del2 = 0
-    private var del3 = 0
+    private var pass = false
+    private val cheked1 = mutableListOf<Int>()
     private val liChek = listOf(Color.GREEN, Color.RED, Color.YELLOW)
     private val chek = listOf(Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.CYAN, Color.GRAY)
     private val haChek = listOf(Color.GREEN, Color.RED, Color.YELLOW, Color.BLUE, Color.CYAN, Color.GRAY, Color.LTGRAY, Color.WHITE, Color.DKGRAY)
@@ -31,7 +32,7 @@ class GameView(context: Context, attrs: AttributeSet?) :
     private val chekbb = listOf<Int>(4,10,16,22,28,34)
     private val plita = mutableListOf<Plita>()
     private val movePlita = mutableListOf<Int>()
-    private var delay = 3
+    private var delay = 2
     private var counter = 0
     private var strokePaint = Paint().apply {
         color = Color.WHITE
@@ -143,32 +144,40 @@ class GameView(context: Context, attrs: AttributeSet?) :
         if (!gameOver)swap()
         delete()
         respawn()
-        /*for (plit in plita) {
-            if (isTouching && touchX > width / 2f && touchX < width / 10 * 9f && touchY > 1800f && touchY < 2000f) {
-                val cheked = mutableListOf<Int>()
-                val cheking = mutableListOf<Int>()
-                for (plit in plita) if (hard) if (plit.cvet.color == haChek[schet1]) cheking.add(
-                    plita.indexOf(plit)
-                )
-                for (plit in plita) if (medium) if (plit.cvet.color == chek[schet1]) cheking.add(
-                    plita.indexOf(plit)
-                )
-                for (plit in plita) if (light) if (plit.cvet.color == liChek[schet1]) cheking.add(
-                    plita.indexOf(plit)
-                )
-                for (k in cheking) for (j in cheking) for (i in cheking) if (i - j == 6 && j - k == 12 || i - j == 12 && j - k == 6) {
-                    cheked.add(i); cheked.add(j); cheked.add(k)
+
+            if (isTouching && touchX > width / 2f && touchX < width/10*9f && touchY > plita.last().x + 300f && touchY < plita.last().x + 500f) {
+                isTouching = false
+                for (plit in plita) {
+                    val cheking1 = mutableListOf<Int>()
+                    for (plit in plita) if (hard) if (plit.cvet.color == haChek[schet1]) cheking1.add(
+                        plita.indexOf(plit)
+                    )
+                    for (plit in plita) if (medium) if (plit.cvet.color == chek[schet1]) cheking1.add(
+                        plita.indexOf(plit)
+                    )
+                    for (plit in plita) if (light) if (plit.cvet.color == liChek[schet1]) cheking1.add(
+                        plita.indexOf(plit)
+                    )
+                    for (k in cheking1) for (j in cheking1) for (i in cheking1) if (i - j == 6 && j - k == 12 || i - j == 12 && j - k == 6) {
+                        cheked1.add(i); cheked1.add(j); cheked1.add(k)
+                    }
+                    for (k in cheking1) for (j in cheking1) for (i in cheking1) if (i !in chekbord && j !in chekbord || j in chekbb && i in chekbord) if (i - j == 1 && j - k == 2 || i - j == 2 && j - k == 1) {
+                        cheked1.add(i); cheked1.add(j); cheked1.add(k)
+                    }
+                    for (k in cheking1) for (j in cheking1) for (i in cheking1) if (i !in chekbord && j !in chekbord || j in chekbb && i in chekbord) if (i - j == 1 && j - k == 2 || i - j == 2 && j - k == 1) {
+                        cheked1.add(i); cheked1.add(j); cheked1.add(k)
+                    }
+                    for (k in cheking1) for (j in cheking1) for (i in cheking1) if (i - j == 6 && j - k == 12 || i - j == 12 && j - k == 6) {
+                        cheked1.add(i); cheked1.add(j); cheked1.add(k)
+                    }
+
+                    schet1++
+                    if (hard) if (schet1 == 9) schet1 = 0
+                    if (medium) if (schet1 == 6) schet1 = 0
+                    if (light) if (schet1 == 3) schet1 = 0
                 }
-                for (k in cheking) for (j in cheking) for (i in cheking) if (i !in chekbord && j !in chekbord || j in chekbb && i in chekbord) if (i - j == 1 && j - k == 2 || i - j == 2 && j - k == 1) {
-                    cheked.add(i); cheked.add(j); cheked.add(k)
-                }
-                obvod = cheked
-                schet1++
-                if (hard) if (schet1 == 9) schet1 = 0
-                if (medium) if (schet1 == 6) schet1 = 0
-                if (light) if (schet1 == 3) schet1 = 0
+                pass = true
             }
-        }*/
     }
 
     private fun draw() {
@@ -203,11 +212,9 @@ class GameView(context: Context, attrs: AttributeSet?) :
                 canvas.drawRect(45f + (160f * i), 795f, 45f + 12f + (160f * i), 795f + (160f * 6), adgePaint)
                canvas.drawRect(45f, 795f + (160f * i), 45f + (162f * 6), 795f + 12f + (160f * i), adgePaint)
             }
-            /*if (obvod.isNotEmpty()){
-                for (i in obvod)canvas.drawRect(plita[obvod[i]].y, plita[obvod[i]].x, plita[obvod[i]].y + 160f, plita[obvod[i]].x + 160f, BorderPaint)
-                del++
-                if (del3 == 120){ del3=0;obvod.clear()}
-            }*/
+            if (pass && cheked1.isNotEmpty()){
+                for (i in cheked1)canvas.drawRect(plita[cheked1[i]].y, plita[cheked1[i]].x, plita[cheked1[i]].y + 160f, plita[cheked1[i]].x + 160f, BorderPaint)
+            }
             if (movePlita.isNotEmpty()) {
                 canvas.drawRect(plita[movePlita[0]].y - 160f, plita[movePlita[0]].x, plita[movePlita[0]].y + 320f, plita[movePlita[0]].x + 160f, plitBorderPaint)
                 canvas.drawRect(plita[movePlita[0]].y, plita[movePlita[0]].x - 160f, plita[movePlita[0]].y + 160f, plita[movePlita[0]].x + 320f, plitBorderPaint)
@@ -289,7 +296,6 @@ class GameView(context: Context, attrs: AttributeSet?) :
             for (k in cheking) for (j in cheking) for (i in cheking) if (i !in chekbord && j !in chekbord || j in chekbb && i in chekbord) if (i - j == 1 && j - k == 1) {
                 cheked.add(i); cheked.add(j); cheked.add(k); score += cheked.size * 50
             }
-            for (i in cheked) plita[i].cvet.color = Color.WHITE
             for (i in cheked) plita[i].cvet.color = Color.BLACK
             schet++
             if (hard) if (schet == 9) schet = 0
@@ -345,13 +351,15 @@ class GameView(context: Context, attrs: AttributeSet?) :
             plita[movePlita[0]].cvet.color = plita[movePlita[1]].cvet.color.also { plita[movePlita[1]].cvet.color = plita[movePlita[0]].cvet.color }
             if (movePlita[0]!=movePlita[1])terns --
             movePlita.clear()
+            pass = false
+            cheked1.clear()
             counter=0
         }
     }
     private fun choice(){
         for (plit in plita) {
             if (isTouching && touchY > plit.x && touchY < plit.x + 160f && touchX > plit.y && touchX < plit.y + 160f) {
-                if (delay == 3) {
+                if (delay == 2) {
                     movePlita.add(plita.indexOf(plit))
                     delay = 0
                     counter++
